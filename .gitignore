@@ -1,2 +1,8 @@
 .DS_Store
 *.log
+
+.openai/
+node_modules/
+.firebase/
+*-debug.log
+.env*

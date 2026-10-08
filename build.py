@@ -1,4 +1,4 @@
-import json,re,html
+import json,re,html,shutil
 from pathlib import Path
 root=Path(__file__).resolve().parent
 source=root/'source-data'
@@ -23,5 +23,10 @@ data=dict(lectures=lectures,assignments=assignments,setup=links(page('course-mat
 assert len(lectures)==26 and len(assignments)==10
 text=(root/'template.html').read_text().replace('/*COURSE_DATA*/', 'const COURSE = '+json.dumps(data,ensure_ascii=False)+';').replace('/*STYLES*/',(root/'styles.css').read_text()).replace('/*APP*/',(root/'app.js').read_text())
 (root/'dist/index.html').write_text(text)
-(root/'dist/study-studio.html').write_text(text)
+
+for asset in ['cloud.js','sync-core.js','firebase-config.json']:
+ shutil.copyfile(root/asset,root/'dist'/asset)
+(root/'dist/.nojekyll').write_text('')
+legacy=root/'dist/study-studio.html'
+if legacy.exists():legacy.unlink()
 print(f'Built {len(lectures)} lectures, {sum(len(l["videos"]) for l in lectures)} videos, {sum(len(l["notebooks"]) for l in lectures)} notebooks and {len(assignments)} assignments.')
