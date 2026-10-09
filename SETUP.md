@@ -4,7 +4,7 @@ The website is static and hosted on GitHub Pages. Firebase Authentication handle
 
 ## Firebase console
 
-1. Create a project named **Computational Study Studio**. Keep the **Spark** plan, skip Google Analytics and Gemini, and do not attach billing.
+1. Create a project named **Study Studio**. Keep the **Spark** plan, skip Google Analytics and Gemini, and do not attach billing.
 2. Register a **Web app** named **Study Studio**. Copy its public configuration into `firebase-config.json` (apiKey, authDomain, projectId, appId). These web configuration values are designed for browser use; never add a service-account key or administrative credential.
 3. Under **Authentication → Sign-in method**, enable **Email/Password**. Leave email-link/passwordless sign-in disabled.
 4. Under **Authentication → Settings → Authorized domains**, add `hsbsidd.github.io`. The local preview, if needed, also requires `localhost`.
@@ -16,8 +16,8 @@ The website is static and hosted on GitHub Pages. Firebase Authentication handle
 
 The workflow in `.github/workflows/pages.yml` rebuilds the website and deploys `dist/` whenever `main` changes. Repository **Settings → Pages → Source** must be **GitHub Actions**.
 
-Expected repository: `hsbsidd/computational-thinking-study-studio`.
-Expected website: `https://hsbsidd.github.io/computational-thinking-study-studio/`.
+Expected repository: `hsbsidd/study-studio`.
+Expected website: `https://hsbsidd.github.io/study-studio/`.
 
 No GitHub repository secret is required for browser Firebase configuration. Security comes from Firebase Authentication and the published database rules, not from hiding the public API key.
 
