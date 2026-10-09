@@ -1,25 +1,61 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    match /progress/{userId} {
-      function owner() {
-        return request.auth != null
-          && request.auth.uid == userId
-          && request.auth.token.email_verified == true;
+    function member() {
+      return request.auth != null
+        && request.auth.token.email_verified == true
+        && request.auth.token.email.lower() in get(/databases/$(database)/documents/studio/settings).data.allowedEmails;
+    }
+    function owner(uid) { return member() && request.auth.uid == uid; }
+    function progressShape() {
+      return request.resource.data.keys().hasOnly(['payload', 'revision', 'updatedAt'])
+        && request.resource.data.payload is string
+        && request.resource.data.payload.size() <= 750000
+        && request.resource.data.revision is int
+        && request.resource.data.updatedAt == request.time;
+    }
+    match /studio/settings { allow get: if member(); }
+    // The original document is retained for migration and recovery. Only its owner can read it.
+    match /progress/{uid} { allow get: if owner(uid); }
+    match /learners/{uid}/progress/{courseId} {
+      allow get: if owner(uid);
+      allow create: if owner(uid) && progressShape() && request.resource.data.revision == 1;
+      allow update: if owner(uid) && progressShape()
+        && request.resource.data.revision == resource.data.revision + 1;
+    }
+    match /profiles/{uid} {
+      allow read: if member();
+      allow create, update: if owner(uid)
+        && request.resource.data.keys().hasOnly(['uid', 'email', 'name'])
+        && request.resource.data.uid == uid
+        && request.resource.data.email == request.auth.token.email
+        && request.resource.data.name is string && request.resource.data.name.size() <= 80;
+    }
+    match /courseDefinitions/{courseId} {
+      allow read: if member();
+      allow create: if member()
+        && request.resource.data.keys().hasOnly(['payload', 'createdBy', 'createdAt'])
+        && request.resource.data.payload is string && request.resource.data.payload.size() <= 750000
+        && request.resource.data.createdBy == request.auth.uid
+        && request.resource.data.createdAt == request.time;
+    }
+    // Partner-visible documents contain numerical summaries only; never private notes.
+    match /catalogues/{uid}/courses/{courseId} {
+      allow read: if member();
+      function shape() {
+        return request.resource.data.keys().hasOnly(['courseId', 'completed', 'total', 'percent', 'source', 'addedAt', 'updatedAt'])
+          && request.resource.data.courseId == courseId
+          && request.resource.data.completed is int && request.resource.data.completed >= 0
+          && request.resource.data.total is int && request.resource.data.total > 0
+          && request.resource.data.completed <= request.resource.data.total
+          && request.resource.data.percent is int && request.resource.data.percent >= 0 && request.resource.data.percent <= 100
+          && request.resource.data.source in ['upload', 'starter', 'partner', 'migration']
+          && request.resource.data.updatedAt == request.time;
       }
-      allow get: if owner();
-      allow create: if owner()
-        && request.resource.data.keys().hasOnly(['payload', 'revision', 'updatedAt'])
-        && request.resource.data.payload is string
-        && request.resource.data.payload.size() <= 750000
-        && request.resource.data.revision == 1
-        && request.resource.data.updatedAt == request.time;
-      allow update: if owner()
-        && request.resource.data.keys().hasOnly(['payload', 'revision', 'updatedAt'])
-        && request.resource.data.payload is string
-        && request.resource.data.payload.size() <= 750000
-        && request.resource.data.revision == resource.data.revision + 1
-        && request.resource.data.updatedAt == request.time;
+      allow create: if owner(uid) && shape() && request.resource.data.addedAt == request.time;
+      allow update: if owner(uid) && shape()
+        && request.resource.data.addedAt == resource.data.addedAt
+        && request.resource.data.source == resource.data.source;
     }
   }
 }

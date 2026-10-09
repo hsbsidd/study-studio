@@ -1,25 +1,40 @@
-# Computational Thinking — Study Studio
+# Study Studio
 
-An independent companion for MIT OCW **18.S191, Fall 2020**: 26 lectures, 56 video links, 31 notebook links, 10 assignments, search, bookmarks, notes, and an adjustable study pace.
+A static MIT OpenCourseWare course library for two verified learners. Hosted on GitHub Pages; Firebase Authentication handles sign-in and Cloud Firestore stores course definitions, independent catalogues, and private progress.
 
-Hosted using **GitHub Pages**, with **Firebase email/password authentication** and private per-user progress in **Cloud Firestore**. See [SETUP.md](SETUP.md) for configuration, deployment, and end-to-end checks.
+## Use it
 
-## Development
+- **My courses** lists your own catalogue and overall completion.
+- **Add course** accepts a modern MIT OCW download ZIP or extracted folder containing `data.json`. Preview the detected sessions before saving.
+- **Partner’s courses** shows the other account’s courses and numerical completion summaries. **Add to my courses** starts an independent copy with empty progress and notes. Adding an existing course keeps your progress.
+- Each course has a study journey, linked videos/readings, assignments, private notebook, pace settings, and per-course backup/export.
+
+Packages are parsed in the browser. Only metadata and online links are saved; original PDFs, videos, and ZIPs are not uploaded. The ZIP parser runs in a worker with size limits and a timeout. Unsupported packages produce an error without adding a course. The two supplied packages are included on the starter shelf; neither is automatically enrolled.
+
+## Build and test
 
 ```sh
-python3 build.py
+npm ci
 npm test
-python3 -m http.server 8765 --directory dist
+python3 build.py
+npm run test:rules
 ```
 
-Edit `template.html`, `styles.css`, and `app.js` for the interface; `cloud.js` contains authentication and cloud persistence. Public Firebase web configuration belongs in `firebase-config.json`. `sync-core.js` guards against stale-device writes and oversized notes. The build embeds the original source data from `source-data/` and copies required modules into `dist/`.
+Rules tests need Java 21 and start the official Firebase Firestore emulator using a disposable `demo-study-studio` project. GitHub Actions runs the unit/import tests and emulator permission tests. The browser uses vendored fflate 0.8.3 and Firebase SDK 12.19.0; no bundler is required.
 
-Progress is saved to the signed-in, verified account. Guest visitors can browse course resources. Videos and notebook links need internet; Julia code runs in Julia/Pluto on your computer, not in the website. The original downloaded course files outside this directory are unchanged.
+Serve `dist/` using HTTP for local preview. `build.py` builds the original computational-thinking course from `source-data/`, copies assets, and generates the starter-course manifest. The imported Algorithms and Mathematics definitions are in `courses/`; their unmodified package metadata is kept in `tests/fixtures/` for regression tests.
 
-## Attribution
+## Data boundaries
 
-Course by MIT OpenCourseWare. Instructors: Alan Edelman, David P. Sanders, Grant Sanderson, James Schloss, and Henri Drake.
+- `studio/settings`: administrator-configured pair of allowed email addresses; no client writes.
+- `courseDefinitions/{courseId}`: immutable OCW course metadata, readable by the pair.
+- `catalogues/{uid}/courses/{courseId}`: partner-readable numerical summaries, never notes.
+- `learners/{uid}/progress/{courseId}`: owner-only notes, checklists, bookmarks, and preferences.
+- `profiles/{uid}`: pair-readable display identity.
+- `progress/{uid}`: original owner-only progress retained for migration and recovery.
 
-Source: https://ocw.mit.edu/courses/18-s191-introduction-to-computational-thinking-fall-2020/
+The first verified sign-in migrates existing computational-thinking progress into its course entry without deleting the old document. Progress and the partner-visible summary save atomically. Revision checks reject a stale device overwrite. Export its draft before reloading when a conflict occurs.
 
-MIT OCW metadata identifies course materials as CC BY-NC-SA 4.0. The materials page separately identifies code as MIT-licensed and text as CC BY-SA 4.0. Original resources retain their respective licenses; adapted course content retains the applicable source license. The companion adds interface, self-assessment tools, study groupings, and partner discussion prompts. It is not an official MIT product and provides no official grading or certificates.
+See [SETUP.md](SETUP.md) for Firebase configuration and release checks. The database region has not been changed in this feature.
+
+MIT OCW content retains its original licences and attribution. This is an independent study companion, not an official MIT product. It does not grade assignments or award certificates. fflate is MIT-licensed; its licence is in `vendor/fflate-LICENSE`.

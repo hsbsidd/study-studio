@@ -1,1 +1,19 @@
-{"private":true,"type":"module","scripts":{"test":"node --test tests/*.test.mjs","build":"python3 build.py"}}
+{
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test tests/*.test.mjs",
+    "build": "python3 build.py",
+    "test:rules": "npx --yes firebase-tools@15.33.0 emulators:exec --only firestore --project demo-study-studio \"node --test tests/*.rules.mjs\""
+  },
+  "dependencies": {
+    "fflate": "0.8.3"
+  },
+  "devDependencies": {
+    "@firebase/rules-unit-testing": "5.0.0",
+    "firebase": "12.19.0"
+  },
+  "overrides": {
+    "@grpc/grpc-js": "1.13.6"
+  }
+}

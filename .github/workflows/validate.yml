@@ -1,0 +1,27 @@
+name: Validate course library
+on:
+  push:
+    branches: [main, feature/course-library]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - run: npm ci
+      - run: node --check app.js && node --check cloud.js && npm test && python3 build.py
+      - run: npx --yes firebase-tools@15.33.0 emulators:exec --only firestore --project demo-study-studio "node --test tests/*.rules.mjs"
