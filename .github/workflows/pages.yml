@@ -24,7 +24,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - run: node --check app.js && node --check cloud.js && node --test tests/*.test.mjs
+      - run: node --check app.js && node --check cloud.js && node --check ocw-import.js && node --test tests/*.test.mjs
       - run: python3 build.py
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
